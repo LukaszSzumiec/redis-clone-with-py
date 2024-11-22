@@ -17,7 +17,7 @@ class TCPServer:
 
     def listen_for_requests(self):
         while True:
-            self._socket.listen(2)
+            self._socket.listen(3)
             connection, address = self._socket.accept()
             message = connection.recv(1024).decode()
             print(f"Received message: {message}")
@@ -64,7 +64,7 @@ class DatabaseInterface:
         return "OK"
 
     def get(self, key):
-        return self._database[key]
+        return self._database.get(key, "NULL")
 
     def remove(self, key):
         self._database.pop(key)
