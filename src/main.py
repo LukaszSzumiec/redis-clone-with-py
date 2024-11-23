@@ -1,5 +1,16 @@
 import socket
-from src.settings import PORT
+import queue
+from src.settings import SERVER_ADDRESS, PORT
+
+
+client_queue = queue.Queue()
+
+
+def process_queue():
+    while True:
+        client_socket, client_address = client_queue.get()  # Pobiera klienta z kolejki
+        handle_client(client_socket, client_address)
+        client_queue.task_done()
 
 
 class TCPServer:
@@ -8,8 +19,7 @@ class TCPServer:
         self._database_wrapper = DatabaseWrapper()
 
     def __enter__(self):
-        host = socket.gethostname()
-        self._socket.bind((host, PORT), )
+        self._socket.bind((SERVER_ADDRESS, PORT), )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -17,7 +27,7 @@ class TCPServer:
 
     def listen_for_requests(self):
         while True:
-            self._socket.listen(3)
+            self._socket.listen(5)
             connection, address = self._socket.accept()
             message = connection.recv(1024).decode()
             print(f"Received message: {message}")
@@ -26,6 +36,17 @@ class TCPServer:
 
             connection.send(return_message.encode())
             connection.close()
+
+    def handle_request(self, client_socket, client_address):
+        try:
+            data = client_socket.recv(1024).decode('utf-8')
+            print(f"Otrzymano od {client_address}: {data}")
+            response = f"Serwer otrzymał: {data}"
+            client_socket.send(response.encode('utf-8'))
+        except Exception as e:
+            print(f"Błąd obsługi klienta {client_address}: {e}")
+        finally:
+            client_socket.close()
 
 
 class DatabaseWrapper:
