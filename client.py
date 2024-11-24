@@ -1,5 +1,6 @@
 import socket
-from src.settings import SERVER_ADDRESS, PORT
+
+from redis.settings import SERVER_ADDRESS, PORT
 
 
 class QuickClient:
@@ -25,3 +26,12 @@ class SeparatedClient:
         self.s.sendall(message.encode())
         data = self.s.recv(1024)
         return data
+
+
+if __name__ == "__main__":
+    print("Client is starting...")
+    with SeparatedClient() as client:
+        while True:
+            query = input("Parse query: ")
+            response = client.send(query)
+            print(response)

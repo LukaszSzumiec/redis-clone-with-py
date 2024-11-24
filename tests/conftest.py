@@ -1,8 +1,8 @@
 import threading
 import pytest
 
-from src.tests.client import QuickClient, SeparatedClient
-from src.main import TCPServer
+from client import QuickClient, SeparatedClient
+from redis.app import TCPServer
 
 
 @pytest.fixture()

@@ -1,8 +1,7 @@
 import socket
 import queue
-import threading
 import select
-from src.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
+from redis.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 
 
 class TCPServer:
@@ -40,11 +39,13 @@ class TCPServer:
         client_socket, client_address = self._socket.accept()
         self.connections.append(client_socket)
         self.clients[client_socket] = client_address
+        print("New connection accepted")
 
     def handle_request(self, connection):
         data = connection.recv(1024).decode()
         if data:
             try:
+                print(f"Received message {str(data)}")
                 return_message = self._database_wrapper.parse_message(data)
                 if not return_message:
                     connection.send("Syntax Error".encode())
@@ -53,6 +54,7 @@ class TCPServer:
             except Exception as e:
                 connection.send(f"Exception Occured {str(e)}".encode())
         else:
+            print("Connection with client closed")
             self.clients.pop(connection)
             self.connections.remove(connection)
 
@@ -103,7 +105,3 @@ class DatabaseInterface:
 def main():
     with TCPServer() as server:
         server.listen_for_requests()
-
-
-if __name__ == "__main__":
-    main()
