@@ -1,7 +1,7 @@
 import threading
 import pytest
 
-from src.tests.client import Client
+from src.tests.client import QuickClient, SeparatedClient
 from src.main import TCPServer
 
 
@@ -15,5 +15,10 @@ def tcp_server():
 
 
 @pytest.fixture()
-def client():
-    return Client()
+def quick_client():
+    return QuickClient()
+
+
+@pytest.fixture()
+def separated_client():
+    return SeparatedClient

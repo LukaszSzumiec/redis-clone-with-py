@@ -1,15 +1,19 @@
 import socket
-import threading
-
 import queue
+import threading
+import select
 from src.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 
 
 class TCPServer:
     def __init__(self):
         self._socket = socket.socket()
+        self._socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
         self._database_wrapper = DatabaseWrapper()
         self.client_queue = queue.Queue()
+        self.connections = [self._socket]
+        self.clients = {}
 
     def __enter__(self):
         self._socket.bind(
@@ -21,28 +25,24 @@ class TCPServer:
         self._socket.close()
 
     def listen_for_requests(self):
-        threading.Thread(target=self.process_queue, daemon=True).start()
-
+        self._socket.listen(MAX_CLIENTS)
         while True:
-            self._socket.listen(MAX_CLIENTS)
-            client_socket, client_address = self._socket.accept()
-            self.client_queue.put((client_socket, client_address))
-
-    def process_queue(self):
-        while True:
-            client_socket, client_address = self.client_queue.get()
-            self.handle_request(client_socket, client_address)
-            self.client_queue.task_done()
-
-    def handle_request(self, client_socket, client_address):
-        try:
-            data = client_socket.recv(1024).decode("utf-8")
-            return_message = self._database_wrapper.parse_message(data)
-            client_socket.send(return_message.encode("utf-8"))
-        except Exception as e:
-            print(f"Client handling error: {client_address}: {e}")
-        finally:
-            client_socket.close()
+            read_sockets, _, exception_sockets = select.select(
+                self.connections, [], self.connections
+            )
+            for changed_socket in read_sockets:
+                if changed_socket == self._socket:
+                    client_socket, client_address = self._socket.accept()
+                    self.connections.append(client_socket)
+                    self.clients[client_socket] = client_address
+                else:
+                    data = changed_socket.recv(1024).decode()
+                    if data:
+                        return_message = self._database_wrapper.parse_message(data)
+                        changed_socket.send(return_message.encode("utf-8"))
+                    else:
+                        self.clients.pop(changed_socket)
+                        self.connections.remove(changed_socket)
 
 
 class DatabaseWrapper:
