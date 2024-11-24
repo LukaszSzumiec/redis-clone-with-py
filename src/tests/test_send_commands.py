@@ -1,6 +1,6 @@
 def test_first_message(tcp_server, quick_client):
     response = quick_client.connect_and_send("Test")
-    assert response.decode() == ""
+    assert response.decode() == "Syntax Error"
 
 
 def test_set_call(tcp_server, quick_client):

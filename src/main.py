@@ -30,19 +30,31 @@ class TCPServer:
             read_sockets, _, exception_sockets = select.select(
                 self.connections, [], self.connections
             )
-            for changed_socket in read_sockets:
-                if changed_socket == self._socket:
-                    client_socket, client_address = self._socket.accept()
-                    self.connections.append(client_socket)
-                    self.clients[client_socket] = client_address
+            for connection in read_sockets:
+                if connection == self._socket:
+                    self.accept_new_connection()
                 else:
-                    data = changed_socket.recv(1024).decode()
-                    if data:
-                        return_message = self._database_wrapper.parse_message(data)
-                        changed_socket.send(return_message.encode("utf-8"))
-                    else:
-                        self.clients.pop(changed_socket)
-                        self.connections.remove(changed_socket)
+                    self.handle_request(connection=connection)
+
+    def accept_new_connection(self):
+        client_socket, client_address = self._socket.accept()
+        self.connections.append(client_socket)
+        self.clients[client_socket] = client_address
+
+    def handle_request(self, connection):
+        data = connection.recv(1024).decode()
+        if data:
+            try:
+                return_message = self._database_wrapper.parse_message(data)
+                if not return_message:
+                    connection.send("Syntax Error".encode())
+                else:
+                    connection.send(return_message.encode())
+            except Exception as e:
+                connection.send(f"Exception Occured {str(e)}".encode())
+        else:
+            self.clients.pop(connection)
+            self.connections.remove(connection)
 
 
 class DatabaseWrapper:
