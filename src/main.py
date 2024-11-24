@@ -1,50 +1,46 @@
 import socket
+import threading
+
 import queue
-from src.settings import SERVER_ADDRESS, PORT
-
-
-client_queue = queue.Queue()
-
-
-def process_queue():
-    while True:
-        client_socket, client_address = client_queue.get()  # Pobiera klienta z kolejki
-        handle_client(client_socket, client_address)
-        client_queue.task_done()
+from src.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 
 
 class TCPServer:
     def __init__(self):
         self._socket = socket.socket()
         self._database_wrapper = DatabaseWrapper()
+        self.client_queue = queue.Queue()
 
     def __enter__(self):
-        self._socket.bind((SERVER_ADDRESS, PORT), )
+        self._socket.bind(
+            (SERVER_ADDRESS, PORT),
+        )
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._socket.close()
 
     def listen_for_requests(self):
+        threading.Thread(target=self.process_queue, daemon=True).start()
+
         while True:
-            self._socket.listen(5)
-            connection, address = self._socket.accept()
-            message = connection.recv(1024).decode()
-            print(f"Received message: {message}")
+            self._socket.listen(MAX_CLIENTS)
+            client_socket, client_address = self._socket.accept()
+            self.client_queue.put((client_socket, client_address))
 
-            return_message = self._database_wrapper.parse_message(message)
-
-            connection.send(return_message.encode())
-            connection.close()
+    def process_queue(self):
+        while True:
+            client_socket, client_address = self.client_queue.get()
+            self.handle_request(client_socket, client_address)
+            self.client_queue.task_done()
 
     def handle_request(self, client_socket, client_address):
         try:
-            data = client_socket.recv(1024).decode('utf-8')
-            print(f"Otrzymano od {client_address}: {data}")
-            response = f"Serwer otrzymał: {data}"
-            client_socket.send(response.encode('utf-8'))
+            data = client_socket.recv(1024).decode("utf-8")
+            return_message = self._database_wrapper.parse_message(data)
+            client_socket.send(return_message.encode("utf-8"))
         except Exception as e:
-            print(f"Błąd obsługi klienta {client_address}: {e}")
+            print(f"Client handling error: {client_address}: {e}")
         finally:
             client_socket.close()
 

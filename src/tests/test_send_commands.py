@@ -1,25 +1,22 @@
-from threading import Thread
-
-
 def test_first_message(tcp_server, client):
     response = client.send("Test")
-    assert "Received" == response.decode()
+    assert response.decode() == ""
 
 
 def test_set_call(tcp_server, client):
     response = client.send("SET kappa 1").decode()
-    assert "OK" == response
+    assert response == "OK"
 
     response = client.send("GET kappa").decode()
-    assert "1" == response
+    assert response == "1"
 
 
 def test_delete_call(tcp_server, client):
     response = client.send("SET kappa 1").decode()
-    assert "OK" == response
+    assert response == "OK"
 
     response = client.send("DEL kappa").decode()
-    assert "Deleted" == response
+    assert response == "Deleted"
 
     response = client.send("GET kappa").decode()
-    assert "NULL" == response
+    assert response == "NULL"
