@@ -1,8 +1,10 @@
+import logging
 import socket
 import queue
+import sys
 import select
 from redis.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
-
+from redis.resp.validator import ValidateRequest
 
 class TCPServer:
     def __init__(self):
@@ -39,13 +41,12 @@ class TCPServer:
         client_socket, client_address = self._socket.accept()
         self.connections.append(client_socket)
         self.clients[client_socket] = client_address
-        print("New connection accepted")
 
     def handle_request(self, connection):
         data = connection.recv(1024).decode()
         if data:
             try:
-                print(f"Received message {str(data)}")
+                validated = ValidateRequest(data)
                 return_message = self._database_wrapper.parse_message(data)
                 if not return_message:
                     connection.send("Syntax Error".encode())
