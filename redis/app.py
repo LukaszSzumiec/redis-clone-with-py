@@ -6,6 +6,7 @@ import select
 from redis.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 from redis.resp.validator import ValidateRequest
 
+
 class TCPServer:
     def __init__(self):
         self._socket = socket.socket()
