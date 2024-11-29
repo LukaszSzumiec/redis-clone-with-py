@@ -48,6 +48,7 @@ class TCPServer:
         if data:
             try:
                 validated = ValidateRequest(data)
+                
                 return_message = self._database_wrapper.parse_message(data)
                 if not return_message:
                     connection.send("Syntax Error".encode())
