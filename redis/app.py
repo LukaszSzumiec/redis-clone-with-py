@@ -1,7 +1,5 @@
-import logging
 import socket
 import queue
-import sys
 import select
 from redis.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 from redis.resp.validator import ValidateRequest
@@ -44,17 +42,18 @@ class TCPServer:
         self.clients[client_socket] = client_address
 
     def handle_request(self, connection):
-        data = connection.recv(1024).decode()
+        data = connection.recv(1024)
         if data:
             try:
-                validated = ValidateRequest(data)
-                
+                validator = ValidateRequest(data)
+                data = validator.validate()
                 return_message = self._database_wrapper.parse_message(data)
                 if not return_message:
                     connection.send("Syntax Error".encode())
                 else:
                     connection.send(return_message.encode())
             except Exception as e:
+                print(e)
                 connection.send(f"Exception Occured {str(e)}".encode())
         else:
             print("Connection with client closed")
