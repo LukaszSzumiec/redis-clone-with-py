@@ -1,4 +1,6 @@
-class SimpleString: ...
+class SimpleString:
+    def __init__(self, bytes_list):
+        self.bytes_list = bytes_list
 
 
 class Errors: ...
@@ -10,6 +12,7 @@ class WholeNumbers: ...
 class BulkStrings:
     def __init__(self, bytes_list):
         self.bytes_list = bytes_list
+        self.simple_strings = SimpleString(bytes_list)
 
 
 class Tables:
