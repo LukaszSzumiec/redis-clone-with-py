@@ -1,4 +1,5 @@
 class SimpleString:
+
     def __init__(self, bytes_list):
         self.bytes_list = bytes_list
 
