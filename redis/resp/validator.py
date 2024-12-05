@@ -9,6 +9,7 @@ class ValidateRequest:
 
     def validate(self):
         command = Command(self.bytes_list)
+        command.validate()
         command.parse()
         # amount_of_bulk_strings = self._find_amount_of_bulked_strings()
         # if self.is_table():
