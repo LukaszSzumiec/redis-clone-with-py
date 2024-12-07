@@ -1,6 +1,13 @@
 class ValidateRequest:
+    SUPPORTED_COMMANDS = [
+        "GET",
+        "SET",
+        "DEL",
+        "LPUSH",
+        "COMMAND",
+    ]
+
     def __init__(self, data: bytes):
-        print(f"INPUT COMMAND: {data}")
         self.input_data = data
         self.bytes_list = [x for x in data]
 
@@ -22,6 +29,8 @@ class ValidateRequest:
         for i in range(arguments_amount):
             command.append(self.handle_a_word(bytes_list_iter))
 
+        self._validate_command(command[0])
+
         return command
 
     @classmethod
@@ -42,3 +51,8 @@ class ValidateRequest:
         _ = next(bytes_list_iter)
         _ = next(bytes_list_iter)
         return "".join(word)
+
+    @classmethod
+    def _validate_command(cls, command_word):
+        if command_word not in cls.SUPPORTED_COMMANDS:
+            raise Exception("command not supported %s", command_word)

@@ -4,6 +4,7 @@ import select
 from redis.settings import SERVER_ADDRESS, PORT, MAX_CLIENTS
 from redis.resp.serializer import ResponseSerializer
 from redis.resp.validator import ValidateRequest
+from redis.exceptions import WrongTypeException
 
 
 class TCPServer:
@@ -63,11 +64,14 @@ class TCPServer:
                 serializer = ResponseSerializer(return_message)
                 connection.send(serializer.serialize())
             else:
-                connection.send(b'*0\r\n')
+                connection.send(b"*0\r\n")
 
+        except WrongTypeException:
+            connection.send()
+            ...
         except Exception as e:
             print(e)
-            connection.send(b'*0\r\n')
+            connection.send(b"*0\r\n")
 
 
 class DatabaseWrapper:
@@ -86,6 +90,9 @@ class DatabaseWrapper:
         elif message[0] == "DEL":
             command, key = message[0], message[1]
             return self.run_del_query(key)
+        elif message[0] == "LPUSH":
+            command, key, values = message.pop(0), message.pop(1), message
+            return self.run_lpush_query(key, values)
         else:
             print(f"invalid command {message[0]}")
 
@@ -97,6 +104,9 @@ class DatabaseWrapper:
 
     def run_del_query(self, key):
         return self.database.remove(key)
+
+    def run_lpush_query(self, key, values):
+        return self.database.lpush(key, values)
 
 
 class DatabaseInterface:
@@ -113,6 +123,14 @@ class DatabaseInterface:
     def remove(self, key):
         self._database.pop(key)
         return "Deleted"
+
+    def lpush(self, key, values):
+        if key not in self._database:
+            self._database[key] = values
+        else:
+            if not isinstance(self._database[key], list):
+                raise WrongTypeException
+            self._database[key] = list(reversed(values)) + self._database[key]
 
 
 def main():

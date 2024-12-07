@@ -4,5 +4,5 @@ class ResponseSerializer:
 
     def serialize(self):
         if self.message == "NULL":
-            return b'$-1\r\n'
+            return b"$-1\r\n"
         return f"${len(self.message)}\r\n{self.message}\r\n".encode()

@@ -1,7 +1,7 @@
 def test_first_message(tcp_server, quick_client):
     response = quick_client.connect_and_send("Test")
     assert response.decode() == "Syntax Error"
-# that's the commit to keep my strike rolling when Im late. 
+
 
 def test_set_call(tcp_server, quick_client):
     response = quick_client.connect_and_send("SET kappa 1").decode()
